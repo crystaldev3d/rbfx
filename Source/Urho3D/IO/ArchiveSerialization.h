@@ -37,6 +37,7 @@
 #include "../Math/Quaternion.h"
 
 #include <EASTL/string.h>
+#include <EASTL/utility.h>
 
 #include <type_traits>
 
@@ -149,7 +150,7 @@ inline bool SerializeVariantValueType(Archive& archive, const char* name, Varian
         T value{};
         if (!SerializeValue(archive, name, value))
             return false;
-        variant = value;
+        variant = ea::move(value);
         return true;
     }
     else

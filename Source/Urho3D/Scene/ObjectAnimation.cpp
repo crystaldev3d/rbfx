@@ -57,13 +57,6 @@ void ObjectAnimation::RegisterObject(Context* context)
     context->RegisterFactory<ObjectAnimation>();
 }
 
-bool ObjectAnimation::Serialize(Archive& archive)
-{
-    if (ArchiveBlock block = archive.OpenUnorderedBlock("objectanimation"))
-        return Serialize(archive, block);
-    return false;
-}
-
 bool ObjectAnimation::Serialize(Archive& archive, ArchiveBlock& block)
 {
     return SerializeCustomMap(archive, ArchiveBlockType::Map, "attributeanimations", attributeAnimationInfos_.size(), attributeAnimationInfos_,

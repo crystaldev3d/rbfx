@@ -62,25 +62,27 @@ public:
     /// Return network replication attribute descriptions, or null if none defined.
     virtual const ea::vector<AttributeInfo>* GetNetworkAttributes() const;
 
-    /// Serialize from/to archive. Return true if successful.
-    bool Serialize(Archive& archive) override;
-    /// Serialize content from/to archive. Return true if successful.
+    /// Serialize content from/to existing block of the archive. Return true if successful.
     bool Serialize(Archive& archive, ArchiveBlock& block) override;
 
     /// Load from binary data. Return true if successful.
-    virtual bool Load(Deserializer& source);
+    virtual bool LoadBinary(Deserializer& source);
     /// Save as binary data. Return true if successful.
-    virtual bool Save(Serializer& dest) const;
+    virtual bool SaveBinary(Serializer& dest) const;
     /// Load from XML data. Return true if successful.
     virtual bool LoadXML(const XMLElement& source);
     /// Save as XML data. Return true if successful.
     virtual bool SaveXML(XMLElement& dest) const;
+    /// Load from legacy XML data. Return true if successful.
+    virtual bool LoadLegacyXML(const XMLElement& source);
+    /// Save as legacy XML data. Return true if successful.
+    virtual bool SaveLegacyXML(XMLElement& dest) const;
     /// Load from JSON data. Return true if successful.
     virtual bool LoadJSON(const JSONValue& source);
     /// Save as JSON data. Return true if successful.
     virtual bool SaveJSON(JSONValue& dest) const;
     /// Load from binary resource.
-    virtual bool Load(const ea::string& resourceName);
+    virtual bool LoadBinary(const ea::string& resourceName);
     /// Load from XML resource.
     virtual bool LoadXML(const ea::string& resourceName);
     /// Load from JSON resource.

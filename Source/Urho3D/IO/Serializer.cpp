@@ -292,7 +292,7 @@ bool Serializer::WriteVariantData(const Variant& value)
         if (const Serializable* object = value.GetCustom<SharedPtr<Serializable>>())
         {
             WriteUInt(object->GetType().Value());
-            return object->Save(*this);
+            return object->SaveBinary(*this);
         }
         // When this variant contains null SharedPtr<Serializable> or something else entirely - write a null. This indicates empty value.
         URHO3D_FALLTHROUGH;

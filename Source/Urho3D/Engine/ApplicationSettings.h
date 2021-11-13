@@ -36,8 +36,10 @@ class URHO3D_API ApplicationSettings : public Object
 public:
     explicit ApplicationSettings(Context* context);
 
-    ///
-    bool Serialize(Archive& archive) override;
+    /// Serialize object as new block.
+    virtual bool SerializeAsBlock(Archive& archive) override;
+    /// Serialize object content from/to current block of the archive. Return true if successful.
+    virtual bool Serialize(Archive& archive, ArchiveBlock& block) override;
 
     /// Resource name of scene that player application will start.
     ea::string defaultScene_{};

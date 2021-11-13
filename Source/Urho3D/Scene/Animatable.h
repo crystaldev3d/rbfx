@@ -74,19 +74,13 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
 
-    /// Serialize from/to archive. Return true if successful.
-    bool Serialize(Archive& archive) override;
     /// Serialize content from/to archive. Return true if successful.
     bool Serialize(Archive& archive, ArchiveBlock& block) override;
 
-    /// Load from XML data. Return true if successful.
-    bool LoadXML(const XMLElement& source) override;
-    /// Save as XML data. Return true if successful.
-    bool SaveXML(XMLElement& dest) const override;
-    /// Load from JSON data. Return true if successful.
-    bool LoadJSON(const JSONValue& source) override;
-    /// Save as JSON data. Return true if successful.
-    bool SaveJSON(JSONValue& dest) const override;
+    /// Load from legacy XML data. Return true if successful.
+    bool LoadLegacyXML(const XMLElement& source) override;
+    /// Save as legacy XML data. Return true if successful.
+    bool SaveLegacyXML(XMLElement& dest) const override;
 
     /// Set automatic update of animation, default true.
     /// @property

@@ -412,7 +412,7 @@ Variant Deserializer::ReadVariant(VariantType type, Context* context)
         }
 
         // Restore proper refcount.
-        if (object->Load(*this))
+        if (object->LoadBinary(*this))
             return Variant(MakeCustomValue(object));
         else
             URHO3D_LOGERROR("Deserialization of '{:08X}' failed", typeName.Value());

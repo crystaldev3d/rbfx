@@ -62,19 +62,7 @@ Component::Component(Context* context) :
 
 Component::~Component() = default;
 
-bool Component::Save(Serializer& dest) const
-{
-    // Write type and ID
-    if (!dest.WriteStringHash(GetType()))
-        return false;
-    if (!dest.WriteUInt(id_))
-        return false;
-
-    // Write attributes
-    return Animatable::Save(dest);
-}
-
-bool Component::SaveXML(XMLElement& dest) const
+bool Component::SaveLegacyXML(XMLElement& dest) const
 {
     // Write type and ID
     if (!dest.SetString("type", GetTypeName()))
@@ -83,17 +71,7 @@ bool Component::SaveXML(XMLElement& dest) const
         return false;
 
     // Write attributes
-    return Animatable::SaveXML(dest);
-}
-
-bool Component::SaveJSON(JSONValue& dest) const
-{
-    // Write type and ID
-    dest.Set("type", GetTypeName());
-    dest.Set("id", id_);
-
-    // Write attributes
-    return Animatable::SaveJSON(dest);
+    return Animatable::SaveLegacyXML(dest);
 }
 
 void Component::MarkNetworkUpdate()

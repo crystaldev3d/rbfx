@@ -95,37 +95,33 @@ void Node::RegisterObject(Context* context)
         AM_NET | AM_NOEDIT);
 }
 
-bool Node::Serialize(Archive& archive)
+bool Node::Serialize(Archive& archive, ArchiveBlock& block)
 {
-    if (ArchiveBlock block = archive.OpenUnorderedBlock("node"))
+    if (archive.IsInput())
     {
-        if (archive.IsInput())
-        {
-            SceneResolver resolver;
+        SceneResolver resolver;
 
-            // Load this node ID for resolver
-            unsigned nodeID{};
-            if (!SerializeValue(archive, "id", id_))
-                return false;
-            resolver.AddNode(nodeID, this);
+        // Load this node ID for resolver
+        unsigned nodeID{};
+        if (!SerializeValue(archive, "id", id_))
+            return false;
+        resolver.AddNode(nodeID, this);
 
-            // Load node content
-            if (!Serialize(archive, block, &resolver))
-                return false;
+        // Load node content
+        if (!Serialize(archive, block, &resolver))
+            return false;
 
-            // Resolve IDs and apply attributes
-            resolver.Resolve();
-            ApplyAttributes();
-        }
-        else
-        {
-            // Save node ID and content
-            SerializeValue(archive, "id", id_);
-            Serialize(archive, block, nullptr);
-        }
-        return true;
+        // Resolve IDs and apply attributes
+        resolver.Resolve();
+        ApplyAttributes();
     }
-    return false;
+    else
+    {
+        // Save node ID and content
+        SerializeValue(archive, "id", id_);
+        Serialize(archive, block, nullptr);
+    }
+    return true;
 }
 
 bool Node::Serialize(Archive& archive, ArchiveBlock& block, SceneResolver* resolver,
@@ -235,67 +231,7 @@ bool Node::Serialize(Archive& archive, ArchiveBlock& block, SceneResolver* resol
     return true;
 }
 
-bool Node::Load(Deserializer& source)
-{
-    SceneResolver resolver;
-
-    // Read own ID. Will not be applied, only stored for resolving possible references
-    unsigned nodeID = source.ReadUInt();
-    resolver.AddNode(nodeID, this);
-
-    // Read attributes, components and child nodes
-    bool success = Load(source, resolver);
-    if (success)
-    {
-        resolver.Resolve();
-        ApplyAttributes();
-    }
-
-    return success;
-}
-
-bool Node::Save(Serializer& dest) const
-{
-    // Write node ID
-    if (!dest.WriteUInt(id_))
-        return false;
-
-    // Write attributes
-    if (!Animatable::Save(dest))
-        return false;
-
-    // Write components
-    dest.WriteVLE(GetNumPersistentComponents());
-    for (unsigned i = 0; i < components_.size(); ++i)
-    {
-        Component* component = components_[i];
-        if (component->IsTemporary())
-            continue;
-
-        // Create a separate buffer to be able to skip failing components during deserialization
-        VectorBuffer compBuffer;
-        if (!component->Save(compBuffer))
-            return false;
-        dest.WriteVLE(compBuffer.GetSize());
-        dest.Write(compBuffer.GetData(), compBuffer.GetSize());
-    }
-
-    // Write child nodes
-    dest.WriteVLE(GetNumPersistentChildren());
-    for (unsigned i = 0; i < children_.size(); ++i)
-    {
-        Node* node = children_[i];
-        if (node->IsTemporary())
-            continue;
-
-        if (!node->Save(dest))
-            return false;
-    }
-
-    return true;
-}
-
-bool Node::LoadXML(const XMLElement& source)
+bool Node::LoadLegacyXML(const XMLElement& source)
 {
     SceneResolver resolver;
 
@@ -304,7 +240,7 @@ bool Node::LoadXML(const XMLElement& source)
     resolver.AddNode(nodeID, this);
 
     // Read attributes, components and child nodes
-    bool success = LoadXML(source, resolver);
+    bool success = LoadLegacyXML(source, resolver);
     if (success)
     {
         resolver.Resolve();
@@ -314,26 +250,7 @@ bool Node::LoadXML(const XMLElement& source)
     return success;
 }
 
-bool Node::LoadJSON(const JSONValue& source)
-{
-    SceneResolver resolver;
-
-    // Read own ID. Will not be applied, only stored for resolving possible references
-    unsigned nodeID = source.Get("id").GetUInt();
-    resolver.AddNode(nodeID, this);
-
-    // Read attributes, components and child nodes
-    bool success = LoadJSON(source, resolver);
-    if (success)
-    {
-        resolver.Resolve();
-        ApplyAttributes();
-    }
-
-    return success;
-}
-
-bool Node::SaveXML(XMLElement& dest) const
+bool Node::SaveLegacyXML(XMLElement& dest) const
 {
     // Write node ID
     if (!dest.SetUInt("id", id_))
@@ -370,50 +287,6 @@ bool Node::SaveXML(XMLElement& dest) const
     return true;
 }
 
-bool Node::SaveJSON(JSONValue& dest) const
-{
-    // Write node ID
-    dest.Set("id", id_);
-
-    // Write attributes
-    if (!Animatable::SaveJSON(dest))
-        return false;
-
-    // Write components
-    JSONArray componentsArray;
-    componentsArray.reserve(components_.size());
-    for (unsigned i = 0; i < components_.size(); ++i)
-    {
-        Component* component = components_[i];
-        if (component->IsTemporary())
-            continue;
-
-        JSONValue compVal;
-        if (!component->SaveJSON(compVal))
-            return false;
-        componentsArray.push_back(compVal);
-    }
-    dest.Set("components", componentsArray);
-
-    // Write child nodes
-    JSONArray childrenArray;
-    childrenArray.reserve(children_.size());
-    for (unsigned i = 0; i < children_.size(); ++i)
-    {
-        Node* node = children_[i];
-        if (node->IsTemporary())
-            continue;
-
-        JSONValue childVal;
-        if (!node->SaveJSON(childVal))
-            return false;
-        childrenArray.push_back(childVal);
-    }
-    dest.Set("children", childrenArray);
-
-    return true;
-}
-
 void Node::ApplyAttributes()
 {
     for (unsigned i = 0; i < components_.size(); ++i)
@@ -438,27 +311,6 @@ void Node::AddReplicationState(NodeReplicationState* state)
         AllocateNetworkState();
 
     networkState_->replicationStates_.push_back(state);
-}
-
-bool Node::SaveXML(Serializer& dest, const ea::string& indentation) const
-{
-    SharedPtr<XMLFile> xml(context_->CreateObject<XMLFile>());
-    XMLElement rootElem = xml->CreateRoot("node");
-    if (!SaveXML(rootElem))
-        return false;
-
-    return xml->Save(dest, indentation);
-}
-
-bool Node::SaveJSON(Serializer& dest, const ea::string& indentation) const
-{
-    SharedPtr<JSONFile> json(context_->CreateObject<JSONFile>());
-    JSONValue& rootElem = json->GetRoot();
-
-    if (!SaveJSON(rootElem))
-        return false;
-
-    return json->Save(dest, indentation);
 }
 
 void Node::SetName(const ea::string& name)
@@ -504,7 +356,7 @@ void Node::AddTag(const ea::string& tag)
     if (scene_)
     {
         scene_->NodeTagAdded(this, tag);
-    
+
         // Send event
         using namespace NodeTagAdded;
         VariantMap& eventData = GetEventDataMap();
@@ -1694,57 +1546,13 @@ const ea::vector<unsigned char>& Node::GetNetParentAttr() const
     return impl_->attrBuffer_.GetBuffer();
 }
 
-bool Node::Load(Deserializer& source, SceneResolver& resolver, bool loadChildren, bool rewriteIDs, CreateMode mode)
+bool Node::LoadLegacyXML(const XMLElement& source, SceneResolver& resolver, bool loadChildren, bool rewriteIDs, CreateMode mode)
 {
     // Remove all children and components first in case this is not a fresh load
     RemoveAllChildren();
     RemoveAllComponents();
 
-    // ID has been read at the parent level
-    if (!Animatable::Load(source))
-        return false;
-
-    unsigned numComponents = source.ReadVLE();
-    for (unsigned i = 0; i < numComponents; ++i)
-    {
-        VectorBuffer compBuffer(source, source.ReadVLE());
-        StringHash compType = compBuffer.ReadStringHash();
-        unsigned compID = compBuffer.ReadUInt();
-
-        Component* newComponent = SafeCreateComponent(EMPTY_STRING, compType,
-            (mode == REPLICATED && Scene::IsReplicatedID(compID)) ? REPLICATED : LOCAL, rewriteIDs ? 0 : compID);
-        if (newComponent)
-        {
-            resolver.AddComponent(compID, newComponent);
-            // Do not abort if component fails to load, as the component buffer is nested and we can skip to the next
-            newComponent->Load(compBuffer);
-        }
-    }
-
-    if (!loadChildren)
-        return true;
-
-    unsigned numChildren = source.ReadVLE();
-    for (unsigned i = 0; i < numChildren; ++i)
-    {
-        unsigned nodeID = source.ReadUInt();
-        Node* newNode = CreateChild(rewriteIDs ? 0 : nodeID, (mode == REPLICATED && Scene::IsReplicatedID(nodeID)) ? REPLICATED :
-            LOCAL);
-        resolver.AddNode(nodeID, newNode);
-        if (!newNode->Load(source, resolver, loadChildren, rewriteIDs, mode))
-            return false;
-    }
-
-    return true;
-}
-
-bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadChildren, bool rewriteIDs, CreateMode mode)
-{
-    // Remove all children and components first in case this is not a fresh load
-    RemoveAllChildren();
-    RemoveAllComponents();
-
-    if (!Animatable::LoadXML(source))
+    if (!Animatable::LoadLegacyXML(source))
         return false;
 
     XMLElement compElem = source.GetChild("component");
@@ -1757,7 +1565,7 @@ bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadC
         if (newComponent)
         {
             resolver.AddComponent(compID, newComponent);
-            if (!newComponent->LoadXML(compElem))
+            if (!newComponent->LoadLegacyXML(compElem))
                 return false;
         }
 
@@ -1774,55 +1582,10 @@ bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadC
         Node* newNode = CreateChild(rewriteIDs ? 0 : nodeID, (mode == REPLICATED && Scene::IsReplicatedID(nodeID)) ? REPLICATED :
             LOCAL);
         resolver.AddNode(nodeID, newNode);
-        if (!newNode->LoadXML(childElem, resolver, loadChildren, rewriteIDs, mode))
+        if (!newNode->LoadLegacyXML(childElem, resolver, loadChildren, rewriteIDs, mode))
             return false;
 
         childElem = childElem.GetNext("node");
-    }
-
-    return true;
-}
-
-bool Node::LoadJSON(const JSONValue& source, SceneResolver& resolver, bool loadChildren, bool rewriteIDs, CreateMode mode)
-{
-    // Remove all children and components first in case this is not a fresh load
-    RemoveAllChildren();
-    RemoveAllComponents();
-
-    if (!Animatable::LoadJSON(source))
-        return false;
-
-    const JSONArray& componentsArray = source.Get("components").GetArray();
-
-    for (unsigned i = 0; i < componentsArray.size(); i++)
-    {
-        const JSONValue& compVal = componentsArray.at(i);
-        ea::string typeName = compVal.Get("type").GetString();
-        unsigned compID = compVal.Get("id").GetUInt();
-        Component* newComponent = SafeCreateComponent(typeName, StringHash(typeName),
-            (mode == REPLICATED && Scene::IsReplicatedID(compID)) ? REPLICATED : LOCAL, rewriteIDs ? 0 : compID);
-        if (newComponent)
-        {
-            resolver.AddComponent(compID, newComponent);
-            if (!newComponent->LoadJSON(compVal))
-                return false;
-        }
-    }
-
-    if (!loadChildren)
-        return true;
-
-    const JSONArray& childrenArray = source.Get("children").GetArray();
-    for (unsigned i = 0; i < childrenArray.size(); i++)
-    {
-        const JSONValue& childVal = childrenArray.at(i);
-
-        unsigned nodeID = childVal.Get("id").GetUInt();
-        Node* newNode = CreateChild(rewriteIDs ? 0 : nodeID, (mode == REPLICATED && Scene::IsReplicatedID(nodeID)) ? REPLICATED :
-            LOCAL);
-        resolver.AddNode(nodeID, newNode);
-        if (!newNode->LoadJSON(childVal, resolver, loadChildren, rewriteIDs, mode))
-            return false;
     }
 
     return true;
@@ -2222,13 +1985,10 @@ Component* Node::SafeCreateComponent(const ea::string& typeName, StringHash type
         return CreateComponent(type, mode, id);
     else
     {
-        URHO3D_LOGWARNING("Component type " + type.ToString() + " not known, creating UnknownComponent as placeholder");
+        URHO3D_LOGWARNING("Component type {} is not known, creating UnknownComponent as placeholder",
+            !typeName.empty() ? typeName : type.ToString());
         // Else create as UnknownComponent
         SharedPtr<UnknownComponent> newComponent(context_->CreateObject<UnknownComponent>());
-        if (typeName.empty() || typeName.starts_with("Unknown", false))
-            newComponent->SetType(type);
-        else
-            newComponent->SetTypeName(typeName);
 
         AddComponent(newComponent, id, mode);
         return newComponent;

@@ -97,10 +97,6 @@ class URHO3D_API Scene : public Node
 public:
     /// @manualbind
     using Node::GetComponent;
-    /// @manualbind
-    using Node::SaveXML;
-    /// @manualbind
-    using Node::SaveJSON;
 
     /// Construct.
     explicit Scene(Context* context);
@@ -119,16 +115,10 @@ public:
     template <class T> const SceneComponentIndex& GetComponentIndex() { return GetComponentIndex(T::GetTypeStatic()); }
 
     /// Serialize from/to archive. Return true if successful.
-    bool Serialize(Archive& archive) override;
+    bool Serialize(Archive& archive, ArchiveBlock& block) override;
 
-    /// Load from binary data. Removes all existing child nodes and components first. Return true if successful.
-    bool Load(Deserializer& source) override;
-    /// Save to binary data. Return true if successful.
-    bool Save(Serializer& dest) const override;
-    /// Load from XML data. Removes all existing child nodes and components first. Return true if successful.
-    bool LoadXML(const XMLElement& source) override;
-    /// Load from JSON data. Removes all existing child nodes and components first. Return true if successful.
-    bool LoadJSON(const JSONValue& source) override;
+    /// Load from legacy XML data. Removes all existing child nodes and components first. Return true if successful.
+    bool LoadLegacyXML(const XMLElement& source) override;
     /// Mark for attribute check on the next network update.
     void MarkNetworkUpdate() override;
     /// Add a replication state that is tracking this scene.
@@ -143,14 +133,6 @@ public:
     /// Return lightmap texture.
     Texture2D* GetLightmapTexture(unsigned index);
 
-    /// Load from an XML file. Return true if successful.
-    bool LoadXML(Deserializer& source);
-    /// Load from a JSON file. Return true if successful.
-    bool LoadJSON(Deserializer& source);
-    /// Save to an XML file. Return true if successful.
-    bool SaveXML(Serializer& dest, const ea::string& indentation = "\t") const;
-    /// Save to a JSON file. Return true if successful.
-    bool SaveJSON(Serializer& dest, const ea::string& indentation = "\t") const;
     /// Load from a binary file asynchronously. Return true if started successfully. The LOAD_RESOURCES_ONLY mode can also be used to preload resources from object prefab files.
     bool LoadAsync(File* file, LoadMode mode = LOAD_SCENE_AND_RESOURCES);
     /// Load from an XML file asynchronously. Return true if started successfully. The LOAD_RESOURCES_ONLY mode can also be used to preload resources from object prefab files.

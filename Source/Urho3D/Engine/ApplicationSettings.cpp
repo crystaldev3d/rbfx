@@ -31,48 +31,24 @@ ApplicationSettings::ApplicationSettings(Context* context)
 {
 }
 
-bool ApplicationSettings::Serialize(Archive& archive)
+bool ApplicationSettings::SerializeAsBlock(Archive& archive)
 {
     if (auto block = archive.OpenUnorderedBlock("settings"))
-    {
-        if (!archive.Serialize("defaultScene", defaultScene_))
-            return false;
+        return Serialize(archive, block);
+    return false;
+}
 
-        if (!SerializeValue(archive, "platforms", platforms_))
-            return false;
-
-        if (auto block = archive.OpenMapBlock("settings", engineParameters_.size()))
-        {
-            if (archive.IsInput())
-            {
-                for (unsigned j = 0; j < block.GetSizeHint(); ++j)
-                {
-                    ea::string key;
-                    if (!archive.SerializeKey(key))
-                        return false;
-                    if (!SerializeValue(archive, "value", engineParameters_[key]))
-                        return false;
-                }
-            }
-            else
-            {
-                for (auto& pair : engineParameters_)
-                {
-                    if (!archive.SerializeKey(const_cast<ea::string&>(pair.first)))
-                        return false;
-                    if (!SerializeValue(archive, "value", pair.second))
-                        return false;
-                }
-            }
-        }
+bool ApplicationSettings::Serialize(Archive& archive, ArchiveBlock& block)
+{
+    SerializeValue(archive, "defaultScene", defaultScene_);
+    SerializeValue(archive, "platforms", platforms_);
+    SerializeStringMap(archive, "settings", "value", engineParameters_);
 
 #if URHO3D_PLUGINS
-        if (!SerializeVector(archive, "plugins", "plugin", plugins_))
-            return false;
+    SerializeVector(archive, "plugins", "plugin", plugins_);
 #endif
-    }
 
-    return true;
+    return archive.HasError();
 }
 
 }

@@ -138,68 +138,31 @@ const SceneComponentIndex& Scene::GetComponentIndex(StringHash componentType)
     return emptyIndex;
 }
 
-bool Scene::Serialize(Archive& archive)
+bool Scene::Serialize(Archive& archive, ArchiveBlock& block)
 {
-    if (!Node::Serialize(archive))
+    URHO3D_PROFILE("SerializeScene");
+
+    if (archive.IsInput())
+    {
+        URHO3D_LOGINFO("Loading scene from {}", archive.GetName());
+        StopAsyncLoading();
+        Clear();
+    }
+    else
+    {
+        URHO3D_LOGINFO("Saving scene to {}", archive.GetName());
+    }
+
+    if (!Node::Serialize(archive, block))
         return false;
 
     fileName_ = archive.GetName();
     checksum_ = archive.GetChecksum();
+
     return true;
 }
 
-bool Scene::Load(Deserializer& source)
-{
-    URHO3D_PROFILE("LoadScene");
-
-    StopAsyncLoading();
-
-    // Check ID
-    if (source.ReadFileID() != "USCN")
-    {
-        URHO3D_LOGERROR(source.GetName() + " is not a valid scene file");
-        return false;
-    }
-
-    URHO3D_LOGINFO("Loading scene from " + source.GetName());
-
-    Clear();
-
-    // Load the whole scene, then perform post-load if successfully loaded
-    if (Node::Load(source))
-    {
-        FinishLoading(&source);
-        return true;
-    }
-    else
-        return false;
-}
-
-bool Scene::Save(Serializer& dest) const
-{
-    URHO3D_PROFILE("SaveScene");
-
-    // Write ID first
-    if (!dest.WriteFileID("USCN"))
-    {
-        URHO3D_LOGERROR("Could not save scene, writing to stream failed");
-        return false;
-    }
-
-    auto* ptr = dynamic_cast<Deserializer*>(&dest);
-    if (ptr)
-        URHO3D_LOGINFO("Saving scene to " + ptr->GetName());
-
-    if (Node::Save(dest))
-    {
-        FinishSaving(&dest);
-        return true;
-    }
-    else
-        return false;
-}
-
-bool Scene::LoadXML(const XMLElement& source)
+bool Scene::LoadLegacyXML(const XMLElement& source)
 {
     URHO3D_PROFILE("LoadSceneXML");
 
@@ -207,24 +170,7 @@ bool Scene::LoadXML(const XMLElement& source)
 
     // Load the whole scene, then perform post-load if successfully loaded
     // Note: the scene filename and checksum can not be set, as we only used an XML element
-    if (Node::LoadXML(source))
-    {
-        FinishLoading(nullptr);
-        return true;
-    }
-    else
-        return false;
-}
-
-bool Scene::LoadJSON(const JSONValue& source)
-{
-    URHO3D_PROFILE("LoadSceneJSON");
-
-    StopAsyncLoading();
-
-    // Load the whole scene, then perform post-load if successfully loaded
-    // Note: the scene filename and checksum can not be set, as we only used an XML element
-    if (Node::LoadJSON(source))
+    if (Node::LoadLegacyXML(source))
     {
         FinishLoading(nullptr);
         return true;
@@ -281,98 +227,6 @@ Texture2D* Scene::GetLightmapTexture(unsigned index)
     return index < lightmapTextures_.size() ? lightmapTextures_[index] : nullptr;
 }
 
-bool Scene::LoadXML(Deserializer& source)
-{
-    URHO3D_PROFILE("LoadSceneXML");
-
-    StopAsyncLoading();
-
-    SharedPtr<XMLFile> xml(context_->CreateObject<XMLFile>());
-    if (!xml->Load(source))
-        return false;
-
-    URHO3D_LOGINFO("Loading scene from " + source.GetName());
-
-    Clear();
-
-    if (Node::LoadXML(xml->GetRoot()))
-    {
-        FinishLoading(&source);
-        return true;
-    }
-    else
-        return false;
-}
-
-bool Scene::LoadJSON(Deserializer& source)
-{
-    URHO3D_PROFILE("LoadSceneJSON");
-
-    StopAsyncLoading();
-
-    SharedPtr<JSONFile> json(context_->CreateObject<JSONFile>());
-    if (!json->Load(source))
-        return false;
-
-    URHO3D_LOGINFO("Loading scene from " + source.GetName());
-
-    Clear();
-
-    if (Node::LoadJSON(json->GetRoot()))
-    {
-        FinishLoading(&source);
-        return true;
-    }
-    else
-        return false;
-}
-
-bool Scene::SaveXML(Serializer& dest, const ea::string& indentation) const
-{
-    URHO3D_PROFILE("SaveSceneXML");
-
-    SharedPtr<XMLFile> xml(context_->CreateObject<XMLFile>());
-    XMLElement rootElem = xml->CreateRoot("scene");
-    if (!SaveXML(rootElem))
-        return false;
-
-    auto* ptr = dynamic_cast<Deserializer*>(&dest);
-    if (ptr)
-        URHO3D_LOGINFO("Saving scene to " + ptr->GetName());
-
-    if (xml->Save(dest, indentation))
-    {
-        FinishSaving(&dest);
-        return true;
-    }
-    else
-        return false;
-}
-
-bool Scene::SaveJSON(Serializer& dest, const ea::string& indentation) const
-{
-    URHO3D_PROFILE("SaveSceneJSON");
-
-    SharedPtr<JSONFile> json(context_->CreateObject<JSONFile>());
-    JSONValue rootVal;
-    if (!SaveJSON(rootVal))
-        return false;
-
-    auto* ptr = dynamic_cast<Deserializer*>(&dest);
-    if (ptr)
-        URHO3D_LOGINFO("Saving scene to " + ptr->GetName());
-
-    json->GetRoot() = rootVal;
-
-    if (json->Save(dest, indentation))
-    {
-        FinishSaving(&dest);
-        return true;
-    }
-    else
-        return false;
-}
-
 bool Scene::LoadAsync(File* file, LoadMode mode)
 {
     if (!file)
@@ -426,7 +280,7 @@ bool Scene::LoadAsync(File* file, LoadMode mode)
         resolver_.AddNode(nodeID, this);
 
         // Load root level components first
-        if (!Node::Load(*file, resolver_, false))
+        if (!Node::LoadBinary(*file, resolver_, false))
         {
             StopAsyncLoading();
             return false;

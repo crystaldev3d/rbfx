@@ -87,23 +87,15 @@ public:
     static void RegisterObject(Context* context);
 
     /// Serialize from/to archive. Return true if successful.
-    bool Serialize(Archive& archive) override;
+    bool Serialize(Archive& archive, ArchiveBlock& block) override;
     /// Serialize content from/to archive. Return true if successful.
     bool Serialize(Archive& archive, ArchiveBlock& block, SceneResolver* resolver,
         bool serializeChildren = true, bool rewriteIDs = false, CreateMode mode = REPLICATED);
 
-    /// Load from binary data. Return true if successful.
-    bool Load(Deserializer& source) override;
     /// Load from XML data. Return true if successful.
-    bool LoadXML(const XMLElement& source) override;
-    /// Load from JSON data. Return true if successful.
-    bool LoadJSON(const JSONValue& source) override;
-    /// Save as binary data. Return true if successful.
-    bool Save(Serializer& dest) const override;
+    bool LoadLegacyXML(const XMLElement& source) override;
     /// Save as XML data. Return true if successful.
-    bool SaveXML(XMLElement& dest) const override;
-    /// Save as JSON data. Return true if successful.
-    bool SaveJSON(JSONValue& dest) const override;
+    bool SaveLegacyXML(XMLElement& dest) const override;
     /// Apply attribute changes that can not be applied immediately recursively to child nodes and components.
     void ApplyAttributes() override;
 
@@ -115,10 +107,6 @@ public:
     /// Add a replication state that is tracking this node.
     virtual void AddReplicationState(NodeReplicationState* state);
 
-    /// Save to an XML file. Return true if successful.
-    bool SaveXML(Serializer& dest, const ea::string& indentation = "\t") const;
-    /// Save to a JSON file. Return true if successful.
-    bool SaveJSON(Serializer& dest, const ea::string& indentation = "\t") const;
     /// Set name of the scene node. Names are not required to be unique.
     /// @property
     void SetName(const ea::string& name);
@@ -650,14 +638,8 @@ public:
     const ea::vector<unsigned char>& GetNetRotationAttr() const;
     /// Return network parent attribute.
     const ea::vector<unsigned char>& GetNetParentAttr() const;
-    /// Load components and optionally load child nodes.
-    bool Load(Deserializer& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false,
-        CreateMode mode = REPLICATED);
     /// Load components from XML data and optionally load child nodes.
-    bool LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false,
-        CreateMode mode = REPLICATED);
-    /// Load components from XML data and optionally load child nodes.
-    bool LoadJSON(const JSONValue& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false,
+    bool LoadLegacyXML(const XMLElement& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false,
         CreateMode mode = REPLICATED);
     /// Return the depended on nodes to order network updates.
     const ea::vector<Node*>& GetDependencyNodes() const { return impl_->dependencyNodes_; }

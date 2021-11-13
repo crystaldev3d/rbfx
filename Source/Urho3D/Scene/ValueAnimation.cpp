@@ -91,13 +91,6 @@ void ValueAnimation::RegisterObject(Context* context)
     context->RegisterFactory<ValueAnimation>();
 }
 
-bool ValueAnimation::Serialize(Archive& archive)
-{
-    if (ArchiveBlock block = archive.OpenUnorderedBlock("valueanimation"))
-        return Serialize(archive, block);
-    return false;
-}
-
 bool ValueAnimation::Serialize(Archive& archive, ArchiveBlock& /*block*/)
 {
     const bool loading = archive.IsInput();

@@ -168,15 +168,6 @@ bool AnimatedModel::LoadXML(const XMLElement& source)
     return success;
 }
 
-bool AnimatedModel::LoadJSON(const JSONValue& source)
-{
-    loading_ = true;
-    bool success = Component::LoadJSON(source);
-    loading_ = false;
-
-    return success;
-}
-
 void AnimatedModel::ApplyAttributes()
 {
     if (assignBonesPending_)

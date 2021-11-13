@@ -61,12 +61,8 @@ public:
     /// Handle enabled/disabled state change.
     virtual void OnSetEnabled() { }
 
-    /// Save as binary data. Return true if successful.
-    bool Save(Serializer& dest) const override;
-    /// Save as XML data. Return true if successful.
-    bool SaveXML(XMLElement& dest) const override;
-    /// Save as JSON data. Return true if successful.
-    bool SaveJSON(JSONValue& dest) const override;
+    /// Save as legacy XML data. Return true if successful.
+    bool SaveLegacyXML(XMLElement& dest) const override;
     /// Mark for attribute check on the next network update.
     void MarkNetworkUpdate() override;
     /// Return the depended on nodes to order network updates.

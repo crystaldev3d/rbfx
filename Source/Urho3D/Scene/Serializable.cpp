@@ -25,14 +25,13 @@
 #include "../Core/Context.h"
 #include "../IO/Archive.h"
 #include "../IO/ArchiveSerialization.h"
+#include "../IO/BinaryArchive.h"
 #include "../IO/Deserializer.h"
 #include "../IO/FileSystem.h"
 #include "../IO/Log.h"
 #include "../IO/Serializer.h"
-#include "../Resource/XMLElement.h"
-#include "../Resource/XMLFile.h"
-#include "../Resource/JSONFile.h"
-#include "../Resource/JSONValue.h"
+#include "../Resource/XMLArchive.h"
+#include "../Resource/JSONArchive.h"
 #include "../Resource/ResourceCache.h"
 #include "../Scene/ReplicationState.h"
 #include "../Scene/SceneEvents.h"
@@ -344,58 +343,19 @@ const ea::vector<AttributeInfo>* Serializable::GetNetworkAttributes() const
     return networkState_ ? networkState_->attributes_ : context_->GetNetworkAttributes(GetType());
 }
 
-bool Serializable::Load(Deserializer& source)
+bool Serializable::LoadBinary(Deserializer& source)
 {
-    const ea::vector<AttributeInfo>* attributes = GetAttributes();
-    if (!attributes)
-        return true;
-
-    for (unsigned i = 0; i < attributes->size(); ++i)
-    {
-        const AttributeInfo& attr = attributes->at(i);
-        if (!attr.ShouldLoad())
-            continue;
-
-        if (source.IsEof())
-        {
-            URHO3D_LOGERROR("Could not load " + GetTypeName() + ", stream not open or at end");
-            return false;
-        }
-
-        Variant varValue = source.ReadVariant(attr.type_, context_);
-        OnSetAttribute(attr, varValue);
-    }
-
-    return true;
+    BinaryInputArchive archive(context_, source);
+    return SerializeAsBlock(archive);
 }
 
-bool Serializable::Save(Serializer& dest) const
+bool Serializable::SaveBinary(Serializer& dest) const
 {
-    const ea::vector<AttributeInfo>* attributes = GetAttributes();
-    if (!attributes)
-        return true;
-
-    Variant value;
-
-    for (unsigned i = 0; i < attributes->size(); ++i)
-    {
-        const AttributeInfo& attr = attributes->at(i);
-        if (!attr.ShouldSave())
-            continue;
-
-        OnGetAttribute(attr, value);
-
-        if (!dest.WriteVariantData(value))
-        {
-            URHO3D_LOGERROR("Could not save " + GetTypeName() + ", writing to stream failed");
-            return false;
-        }
-    }
-
-    return true;
+    BinaryOutputArchive archive(context_, dest);
+    return const_cast<Serializable*>(this)->SerializeAsBlock(archive);
 }
 
-bool Serializable::LoadXML(const XMLElement& source)
+bool Serializable::LoadLegacyXML(const XMLElement& source)
 {
     if (source.IsNull())
     {
@@ -470,84 +430,23 @@ bool Serializable::LoadXML(const XMLElement& source)
     return true;
 }
 
-bool Serializable::LoadJSON(const JSONValue& source)
+bool Serializable::LoadXML(const XMLElement& source)
 {
-    if (source.IsNull())
-    {
-        URHO3D_LOGERROR("Could not load " + GetTypeName() + ", null JSON source element");
-        return false;
-    }
+    // New XML format must always contain <attributes> node, import legacy format otherwise
+    if (!source.HasChild("attributes"))
+        return LoadLegacyXML(source);
 
-    const ea::vector<AttributeInfo>* attributes = GetAttributes();
-    if (!attributes)
-        return true;
-
-    // Get attributes value
-    JSONValue attributesValue = source.Get("attributes");
-    if (attributesValue.IsNull())
-        return true;
-    // Warn if the attributes value isn't an object
-    if (!attributesValue.IsObject())
-    {
-        URHO3D_LOGWARNING("'attributes' object is present in " + GetTypeName() + " but is not a JSON object; skipping load");
-        return true;
-    }
-
-    const JSONObject& attributesObject = attributesValue.GetObject();
-
-    for (const AttributeInfo& attr : *attributes)
-    {
-        if (attr.ShouldLoad())
-        {
-            const JSONValue& value = attributesValue[attr.name_];
-            if (value.GetValueType() == JSON_NULL)
-                continue;
-
-            Variant varValue;
-            // If enums specified, do enum lookup ad int assignment. Otherwise assign variant directly
-            if (attr.enumNames_ && attr.type_ == VAR_INT)
-            {
-                const ea::string& valueStr = value.GetString();
-                bool enumFound = false;
-                int enumValue = 0;
-                const char** enumPtr = attr.enumNames_;
-                while (*enumPtr)
-                {
-                    if (!valueStr.comparei(*enumPtr))
-                    {
-                        enumFound = true;
-                        break;
-                    }
-                    ++enumPtr;
-                    ++enumValue;
-                }
-                if (enumFound)
-                    varValue = enumValue;
-                else
-                    URHO3D_LOGWARNING("Unknown enum value " + valueStr + " in attribute " + attr.name_);
-            }
-            else
-                varValue = value.GetVariantValue(attr.type_, context_);
-
-            if (!varValue.IsEmpty())
-                OnSetAttribute(attr, varValue);
-        }
-    }
-
-    // Report missing attributes.
-    for (const auto& pair : attributesObject)
-    {
-        bool found = false;
-        for (int i = 0; i < attributes->size() && !found; i++)
-            found |= attributes->at(i).name_ == pair.first;
-        if (!found)
-            URHO3D_LOGWARNING("Unknown attribute {} in JSON data", pair.first);
-    }
-
-    return true;
+    XMLInputArchive archive(context_, source);
+    return SerializeAsBlock(archive);
 }
 
-bool Serializable::SaveXML(XMLElement& dest) const
+bool Serializable::LoadJSON(const JSONValue& source)
+{
+    JSONInputArchive archive(context_, source);
+    return SerializeAsBlock(archive);
+}
+
+bool Serializable::SaveLegacyXML(XMLElement& dest) const
 {
     if (dest.IsNull())
     {
@@ -589,50 +488,23 @@ bool Serializable::SaveXML(XMLElement& dest) const
     return true;
 }
 
-bool Serializable::SaveJSON(JSONValue& dest) const
+bool Serializable::SaveXML(XMLElement& dest) const
 {
-    const ea::vector<AttributeInfo>* attributes = GetAttributes();
-    if (!attributes)
-        return true;
-
-    Variant value;
-    JSONValue attributesValue;
-
-    for (unsigned i = 0; i < attributes->size(); ++i)
-    {
-        const AttributeInfo& attr = attributes->at(i);
-        if (!attr.ShouldSave())
-            continue;
-
-        OnGetAttribute(attr, value);
-        Variant defaultValue(GetAttributeDefault(i));
-
-        // In JSON serialization default values can be skipped. This will make the file easier to read or edit manually
-        if (value == defaultValue && !SaveDefaultAttributes(attr))
-            continue;
-
-        JSONValue attrVal;
-        // If enums specified, set as an enum string. Otherwise set directly as a Variant
-        if (attr.enumNames_ && attr.type_ == VAR_INT)
-        {
-            int enumValue = value.GetInt();
-            attrVal = attr.enumNames_[enumValue];
-        }
-        else
-            attrVal.SetVariantValue(value, context_);
-
-        attributesValue.Set(attr.name_, attrVal);
-    }
-    dest.Set("attributes", attributesValue);
-
-    return true;
+    XMLOutputArchive archive(context_, source);
+    return const_cast<Serializable*>(this)->SerializeAsBlock(archive);
 }
 
-bool Serializable::Load(const ea::string& resourceName)
+bool Serializable::SaveJSON(JSONValue& dest) const
+{
+    JSONOutputArchive archive(context_, source);
+    return const_cast<Serializable*>(this)->SerializeAsBlock(archive);
+}
+
+bool Serializable::LoadBinary(const ea::string& resourceName)
 {
     SharedPtr<File> file(GetSubsystem<ResourceCache>()->GetFile(resourceName, false));
     if (file)
-        return Load(*file);
+        return LoadBinary(*file);
     return false;
 }
 
@@ -664,14 +536,7 @@ bool Serializable::LoadFile(const ea::string& resourceName)
         return LoadXML(realResourceName);
     if (extension == ".json")
         return LoadJSON(realResourceName);
-    return Load(realResourceName);
-}
-
-bool Serializable::Serialize(Archive& archive)
-{
-    if (ArchiveBlock block = archive.OpenUnorderedBlock("serializable"))
-        return Serialize(archive, block);
-    return false;
+    return LoadBinary(realResourceName);
 }
 
 bool Serializable::Serialize(Archive& archive, ArchiveBlock& block)
@@ -685,7 +550,7 @@ bool Serializable::Serialize(Archive& archive, ArchiveBlock& block)
     const unsigned numAttributes = attributes->size();
     const bool saveDefaults = !archive.IsHumanReadable();
 
-    // Caclculate number of attributes to write
+    // Calculate number of attributes to write
     unsigned numAttributesToWrite = 0;
     if (!archive.IsInput())
     {

@@ -133,9 +133,9 @@ public:
     /// Handle event.
     virtual void OnEvent(Object* sender, StringHash eventType, VariantMap& eventData);
 
-    /// Serialize object.
-    virtual bool Serialize(Archive& archive);
-    /// Serialize content from/to archive. Return true if successful.
+    /// Serialize object as new block.
+    virtual bool SerializeAsBlock(Archive& archive);
+    /// Serialize object content from/to current block of the archive. Return true if successful.
     virtual bool Serialize(Archive& archive, ArchiveBlock& block);
 
     /// Return type info static.

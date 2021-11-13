@@ -306,6 +306,7 @@ void SamplesManager::Start()
     RegisterSample<HelloRmlUI>();
 #endif
 
+    startSample_ = "Serialization";
     if (!startSample_.empty())
         StartSample(startSample_);
 }

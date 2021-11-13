@@ -649,6 +649,10 @@ void Serialization::TestSceneSerialization()
     auto sourceScene = CreateTestScene(context_, 10);
     URHO3D_ASSERT(CompareNodes(sourceScene, sourceScene));
 
+    XMLFile t1(context_);
+    sourceScene->SaveXML(t1.GetOrCreateRoot("scene"));
+    t1.SaveFile("D:/Temp/old.xml");
+
     // Save and load binary
     {
         auto sceneFromBinary = MakeShared<Scene>(context_);
@@ -679,6 +683,8 @@ void Serialization::TestSceneSerialization()
         success &= sceneFromXML->Serialize(xmlInputArchive);
         success &= !xmlInputArchive.HasError();
 
+        xmlSceneData.SaveFile("D:/Temp/new.xml");
+
         URHO3D_ASSERT(CompareNodes(sourceScene, sceneFromXML));
     }
 
@@ -695,18 +701,21 @@ void Serialization::TestSceneSerialization()
         success &= sceneFromJSON->Serialize(jsonInputArchive);
         success &= !jsonInputArchive.HasError();
 
+        jsonSceneData.SaveFile("D:/Temp/new.json");
+
         URHO3D_ASSERT(CompareNodes(sourceScene, sceneFromJSON));
     }
 
-    // Save legacy JSON and load JSON archive
+    // Save legacy XML and load legacy XML
     {
-        auto sceneFromLegacyJSON = MakeShared<Scene>(context_);
+        auto sceneFromLegacyXML = MakeShared<Scene>(context_);
 
-        JSONFile jsonLegacySceneData{ context_ };
-        success &= sourceScene->SaveJSON(jsonLegacySceneData.GetRoot());
+        XMLFile legacyXmlSceneData{ context_ };
+        success &= sourceScene->SaveLegacyXML(legacyXmlSceneData.GetOrCreateRoot("node"));
 
-        JSONInputArchive jsonLegacyInputArchive{ &jsonLegacySceneData };
-        success &= sceneFromLegacyJSON->Serialize(jsonLegacyInputArchive);
+        success &= sceneFromLegacyXML->LoadXML(legacyXmlSceneData.GetRoot());
+        JSONInputArchive jsonLegacyInputArchive{ &legacyXmlSceneData };
+        success &= sceneFromLegacyJSON->Serialize(jsonLegacyInputArchive.);
         success &= !jsonLegacyInputArchive.HasError();
 
         URHO3D_ASSERT(CompareNodes(sourceScene, sceneFromLegacyJSON));

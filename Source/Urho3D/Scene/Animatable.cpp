@@ -76,13 +76,6 @@ void Animatable::RegisterObject(Context* context)
         ResourceRef(ObjectAnimation::GetTypeStatic()), AM_DEFAULT);
 }
 
-bool Animatable::Serialize(Archive& archive)
-{
-    if (ArchiveBlock block = archive.OpenUnorderedBlock("animatable"))
-        return Serialize(archive, block);
-    return false;
-}
-
 bool Animatable::Serialize(Archive& archive, ArchiveBlock& block)
 {
     if (!Serializable::Serialize(archive, block))
@@ -151,9 +144,9 @@ bool Animatable::Serialize(Archive& archive, ArchiveBlock& block)
     return true;
 }
 
-bool Animatable::LoadXML(const XMLElement& source)
+bool Animatable::LoadLegacyXML(const XMLElement& source)
 {
-    if (!Serializable::LoadXML(source))
+    if (!Serializable::LoadLegacyXML(source))
         return false;
 
     SetObjectAnimation(nullptr);
@@ -197,65 +190,9 @@ bool Animatable::LoadXML(const XMLElement& source)
     return true;
 }
 
-bool Animatable::LoadJSON(const JSONValue& source)
+bool Animatable::SaveLegacyXML(XMLElement& dest) const
 {
-    if (!Serializable::LoadJSON(source))
-        return false;
-
-    SetObjectAnimation(nullptr);
-    attributeAnimationInfos_.clear();
-
-    JSONValue value = source.Get("objectanimation");
-    if (!value.IsNull())
-    {
-        SharedPtr<ObjectAnimation> objectAnimation(context_->CreateObject<ObjectAnimation>());
-        if (!objectAnimation->LoadJSON(value))
-            return false;
-
-        SetObjectAnimation(objectAnimation.Get());
-    }
-
-    JSONValue attributeAnimationValue = source.Get("attributeanimation");
-
-    if (attributeAnimationValue.IsNull())
-        return true;
-
-    if (!attributeAnimationValue.IsObject())
-    {
-        URHO3D_LOGWARNING("'attributeanimation' value is present in JSON data, but is not a JSON object; skipping it");
-        return true;
-    }
-
-    const JSONObject& attributeAnimationObject = attributeAnimationValue.GetObject();
-    for (auto it = attributeAnimationObject.begin(); it != attributeAnimationObject.end(); it++)
-    {
-        ea::string name = it->first;
-        JSONValue value = it->second;
-        SharedPtr<ValueAnimation> attributeAnimation(context_->CreateObject<ValueAnimation>());
-        if (!attributeAnimation->LoadJSON(it->second))
-            return false;
-
-        ea::string wrapModeString = value.Get("wrapmode").GetString();
-        WrapMode wrapMode = WM_LOOP;
-        for (int i = 0; i <= WM_CLAMP; ++i)
-        {
-            if (wrapModeString == wrapModeNames[i])
-            {
-                wrapMode = (WrapMode)i;
-                break;
-            }
-        }
-
-        float speed = value.Get("speed").GetFloat();
-        SetAttributeAnimation(name, attributeAnimation, wrapMode, speed);
-    }
-
-    return true;
-}
-
-bool Animatable::SaveXML(XMLElement& dest) const
-{
-    if (!Serializable::SaveXML(dest))
+    if (!Serializable::SaveLegacyXML(dest))
         return false;
 
     // Object animation without name
@@ -283,47 +220,6 @@ bool Animatable::SaveXML(XMLElement& dest) const
         elem.SetAttribute("wrapmode", wrapModeNames[i->second->GetWrapMode()]);
         elem.SetFloat("speed", i->second->GetSpeed());
     }
-
-    return true;
-}
-
-bool Animatable::SaveJSON(JSONValue& dest) const
-{
-    if (!Serializable::SaveJSON(dest))
-        return false;
-
-    // Object animation without name
-    if (objectAnimation_ && objectAnimation_->GetName().empty())
-    {
-        JSONValue objectAnimationValue;
-        if (!objectAnimation_->SaveJSON(objectAnimationValue))
-            return false;
-        dest.Set("objectanimation", objectAnimationValue);
-    }
-
-    JSONValue attributeAnimationValue;
-
-    for (auto i = attributeAnimationInfos_.begin();
-         i != attributeAnimationInfos_.end(); ++i)
-    {
-        ValueAnimation* attributeAnimation = i->second->GetAnimation();
-        if (attributeAnimation->GetOwner())
-            continue;
-
-        const AttributeInfo& attr = i->second->GetAttributeInfo();
-        JSONValue attributeValue;
-        attributeValue.Set("name", attr.name_);
-        if (!attributeAnimation->SaveJSON(attributeValue))
-            return false;
-
-        attributeValue.Set("wrapmode", wrapModeNames[i->second->GetWrapMode()]);
-        attributeValue.Set("speed", (float) i->second->GetSpeed());
-
-        attributeAnimationValue.Set(attr.name_, attributeValue);
-    }
-
-    if (!attributeAnimationValue.IsNull())
-        dest.Set("attributeanimation", attributeAnimationValue);
 
     return true;
 }
