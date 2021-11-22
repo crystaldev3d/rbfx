@@ -31,7 +31,33 @@
 namespace Tests
 {
 
-SharedPtr<Context> CreateCompleteTestContext()
+static SharedPtr<Context> sharedContext;
+
+SharedPtr<Context> GetOrCreateContext(const ea::string& tag, const ea::function<SharedPtr<Context>()>& createFunction)
+{
+    static const ea::string tagVar = "TestContextTag";
+    if (sharedContext && sharedContext->GetGlobalVar(tagVar) == tag)
+        return sharedContext;
+
+    ResetTestContext();
+
+    sharedContext = createFunction();
+    sharedContext->SetGlobalVar(tagVar, tag);
+    return sharedContext;
+}
+
+void ResetTestContext()
+{
+    sharedContext = nullptr;
+}
+
+SharedPtr<Context> CreateSimpleContext()
+{
+    auto context = MakeShared<Context>();
+    return context;
+}
+
+SharedPtr<Context> CreateCompleteContext()
 {
     auto context = MakeShared<Context>();
     auto engine = new Engine(context);

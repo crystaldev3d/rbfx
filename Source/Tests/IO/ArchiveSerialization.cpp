@@ -20,6 +20,8 @@
 // THE SOFTWARE.
 //
 
+#include "../CommonUtils.h"
+
 #include <Urho3D/IO/ArchiveSerialization.h>
 #include <Urho3D/IO/BinaryArchive.h>
 #include <Urho3D/IO/MemoryBuffer.h>
@@ -236,7 +238,7 @@ bool SerializeValue(Archive& archive, const char* name, SerializationTestStruct&
     return false;
 }
 
-SharedPtr<Context> CreateTestContext()
+SharedPtr<Context> CreateSerializationContext()
 {
     auto context = MakeShared<Context>();
     context->RegisterFactory<SerializableObject>();
@@ -346,7 +348,7 @@ ea::unique_ptr<SerializationTestStruct> LoadTestStructBinary(Context* context, V
 
 TEST_CASE("Test structure is serialized to archive")
 {
-    auto context = CreateTestContext();
+    auto context = URHO3D_GET_TEST_CONTEXT(CreateSerializationContext);
     const SerializationTestStruct sourceObject = CreateTestStruct(context);
 
     SECTION("binary archive")
@@ -382,7 +384,7 @@ TEST_CASE("Test structure is serialized to archive")
 
 TEST_CASE("Test structure is serialized as part of the file")
 {
-    auto context = CreateTestContext();
+    auto context = URHO3D_GET_TEST_CONTEXT(CreateSerializationContext);
     SerializationTestStruct sourceObject = CreateTestStruct(context);
 
     SECTION("XML file")

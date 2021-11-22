@@ -34,7 +34,7 @@
 
 TEST_CASE("Lerp animation blending")
 {
-    auto context = Tests::CreateCompleteTestContext();
+    auto context = URHO3D_GET_TEST_CONTEXT(Tests::CreateCompleteContext);
     auto cache = context->GetSubsystem<ResourceCache>();
 
     auto model = Tests::CreateSkinnedQuad_Model(context)->ExportModel("@/SkinnedQuad.mdl");
@@ -128,7 +128,7 @@ TEST_CASE("Lerp animation blending")
 
 TEST_CASE("Additive animation blending")
 {
-    auto context = Tests::CreateCompleteTestContext();
+    auto context = URHO3D_GET_TEST_CONTEXT(Tests::CreateCompleteContext);
     auto cache = context->GetSubsystem<ResourceCache>();
 
     auto model = Tests::CreateSkinnedQuad_Model(context)->ExportModel("@/SkinnedQuad.mdl");
@@ -290,7 +290,7 @@ TEST_CASE("Animation empty track name")
 
 TEST_CASE("Animation start bone")
 {
-    auto context = Tests::CreateCompleteTestContext();
+    auto context = URHO3D_GET_TEST_CONTEXT(Tests::CreateCompleteContext);
     auto cache = context->GetSubsystem<ResourceCache>();
 
     auto model = Tests::CreateSkinnedQuad_Model(context)->ExportModel("@/SkinnedQuad.mdl");
@@ -416,7 +416,7 @@ TEST_CASE("Animation start bone")
 
 TEST_CASE("Variant animation tracks")
 {
-    auto context = Tests::CreateCompleteTestContext();
+    auto context = URHO3D_GET_TEST_CONTEXT(Tests::CreateCompleteContext);
     auto cache = context->GetSubsystem<ResourceCache>();
 
     // Prepare resources

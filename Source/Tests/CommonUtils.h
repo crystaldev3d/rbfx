@@ -34,13 +34,25 @@ using namespace Urho3D;
 namespace Tests
 {
 
+/// Get or create test context.
+SharedPtr<Context> GetOrCreateContext(const ea::string& tag, const ea::function<SharedPtr<Context>()>& createFunction);
+
+/// Reset test context created by GetOrCreateContext.
+void ResetTestContext();
+
+/// Create test context without any subsystems.
+SharedPtr<Context> CreateSimpleContext();
+
 /// Create test context with all subsystems ready.
-SharedPtr<Context> CreateCompleteTestContext();
+SharedPtr<Context> CreateCompleteContext();
 
 /// Run frame with given time step.
 void RunFrame(Context* context, float timeStep, float maxTimeStep = M_LARGE_VALUE);
 
 }
+
+/// Get or create test context of specified type.
+#define URHO3D_GET_TEST_CONTEXT(createFunction) Tests::GetOrCreateContext(#createFunction, createFunction)
 
 /// Convert common types to strings
 /// @{

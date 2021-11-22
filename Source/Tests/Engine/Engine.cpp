@@ -25,10 +25,10 @@
 TEST_CASE("Engine started multiple times in same process")
 {
     {
-        auto context = Tests::CreateCompleteTestContext();
+        auto context = URHO3D_GET_TEST_CONTEXT(Tests::CreateCompleteContext);
     }
 
     {
-        auto context = Tests::CreateCompleteTestContext();
+        auto context = URHO3D_GET_TEST_CONTEXT(Tests::CreateCompleteContext);
     }
 }
