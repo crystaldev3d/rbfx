@@ -222,7 +222,7 @@ TEST_CASE("Additive animation blending")
 
 TEST_CASE("Animation empty track name")
 {
-    auto context = Tests::CreateCompleteTestContext();
+    auto context = URHO3D_GET_TEST_CONTEXT(Tests::CreateCompleteContext);
     auto cache = context->GetSubsystem<ResourceCache>();
 
     auto model = Tests::CreateSkinnedQuad_Model(context)->ExportModel("@/SkinnedQuad.mdl");
