@@ -60,7 +60,6 @@ void Urho3D::AutoTransform::Update(float timeStep)
         }
     }
 
-
     if (animate_)
         target->Rotate(Quaternion(10 * timeStep, 20 * timeStep, 30 * timeStep));
 }

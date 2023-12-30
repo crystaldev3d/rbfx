@@ -59,21 +59,24 @@ URHO3D_DEFINE_APPLICATION_MAIN(MyApplication);
 MyApplication::MyApplication(Context *context)
     : Application(context)
 {
+
 }
 
 void MyApplication::Setup()
 {
     // Organization and application names are used to create writeable folder in OS-specific location.
     // For example, on Windows it would be C:/Users/<username>/AppData/Roaming/<orgname>/<appname>
-    engineParameters_[EP_ORGANIZATION_NAME] = "My Organization";
-    engineParameters_[EP_APPLICATION_NAME] = "My Application";
+    //engineParameters_[EP_ORGANIZATION_NAME] = "My Organization";
+    //engineParameters_[EP_APPLICATION_NAME] = "My Application";
     // conf:// directory is mapped to that writeable folder.
-    engineParameters_[EP_LOG_NAME] = "conf://MyApplication.log";
+    //engineParameters_[EP_LOG_NAME] = "conf://MyApplication.log";
 
+    //engineParameters_[]
+    engineParameters_[EP_WINDOW_MAXIMIZE] = false;
     engineParameters_[EP_FULL_SCREEN] = false;
-    engineParameters_[EP_BORDERLESS] = true;
+    engineParameters_[EP_BORDERLESS] = false;
     engineParameters_[EP_WINDOW_WIDTH] = 1280;
-    engineParameters_[EP_WINDOW_HEIGHT] = 760;
+    engineParameters_[EP_WINDOW_HEIGHT] = 720;
     engineParameters_[EP_LOG_LEVEL] = LOG_DEBUG;
     engineParameters_[EP_AUTOLOAD_PATHS] = "";
 
@@ -89,7 +92,7 @@ void MyApplication::Setup()
 //    }
 //#endif
 
-#if DESKTOP // this prefixes is matter bacause program's data are relative placed upper in hierarhy
+#if DESKTOP // This prefix is significant because these program's Data are relatively located at the top of the hierarchy
     FileSystem* fs = context_->GetSubsystem<FileSystem>();
     engineParameters_[EP_RESOURCE_PREFIX_PATHS] = fs->GetProgramDir() + ";" + fs->GetCurrentDir() + ";../" + ";../..";
 #endif
@@ -101,7 +104,6 @@ void MyApplication::Setup()
 #else
     // engineParameters_[EP_RESOURCE_PATHS] = "Data;CoreData";
     engineParameters_[EP_RESOURCE_PACKAGES] = "Data.pak;CoreData.pak;";
-
 #endif
 
 }
