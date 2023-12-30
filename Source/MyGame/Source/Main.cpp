@@ -21,6 +21,8 @@
 #include <Urho3D/IO/FileSystem.h>
 
 #include <MyGamePlugin/Picker.h>
+#include <MyGamePlugin/FPSCameraController.h>
+
 
 using namespace Urho3D;
 
@@ -51,6 +53,10 @@ private:
 
     /// Geometry in the scene.
     WeakPtr<Node> geometryNode_;
+
+    WeakPtr<Node> planeNode_;
+
+    WeakPtr<FPSCameraController> fpsComp_;
 };
 
 // Define entry point.
@@ -66,12 +72,11 @@ void MyApplication::Setup()
 {
     // Organization and application names are used to create writeable folder in OS-specific location.
     // For example, on Windows it would be C:/Users/<username>/AppData/Roaming/<orgname>/<appname>
-    //engineParameters_[EP_ORGANIZATION_NAME] = "My Organization";
-    //engineParameters_[EP_APPLICATION_NAME] = "My Application";
+    engineParameters_[EP_ORGANIZATION_NAME] = "My Organization";
+    engineParameters_[EP_APPLICATION_NAME] = "My Application";
     // conf:// directory is mapped to that writeable folder.
-    //engineParameters_[EP_LOG_NAME] = "conf://MyApplication.log";
+    engineParameters_[EP_LOG_NAME] = "conf://MyApplication.log";
 
-    //engineParameters_[]
     engineParameters_[EP_WINDOW_MAXIMIZE] = false;
     engineParameters_[EP_FULL_SCREEN] = false;
     engineParameters_[EP_BORDERLESS] = false;
@@ -79,6 +84,7 @@ void MyApplication::Setup()
     engineParameters_[EP_WINDOW_HEIGHT] = 720;
     engineParameters_[EP_LOG_LEVEL] = LOG_DEBUG;
     engineParameters_[EP_AUTOLOAD_PATHS] = "";
+    engineParameters_[EP_PLUGINS] = "MyGamePlugin";
 
 
 //#ifdef _WIN32
@@ -120,7 +126,11 @@ void MyApplication::Start()
     // Create camera.
     Node* cameraNode = scene_->CreateChild("Camera");
     Camera* camera = cameraNode->CreateComponent<Camera>();
+    camera->SetFarClip(1000.0f);
+    camera->SetNearClip(1.0f);
 
+    fpsComp_ = cameraNode->CreateComponent<FPSCameraController>();
+  
     // Create zone.
     Zone* zone = scene_->CreateComponent<Zone>();
     zone->SetFogColor(0xC9C0BB_rgb);
@@ -132,12 +142,23 @@ void MyApplication::Start()
     StaticModel* geometry = geometryNode_->CreateComponent<StaticModel>();
     geometry->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
     geometry->SetMaterial(cache->GetResource<Material>("Materials/DefaultGrey.xml"));
+    geometry->SetCastShadows(true);
+
+    // add plane
+    planeNode_ = scene_->CreateChild("plane");
+    StaticModel* geometry_plane = planeNode_->CreateComponent<StaticModel>();
+    geometry_plane->SetModel(cache->GetResource<Model>("Models/Plane.mdl"));
+    geometry_plane->SetMaterial(cache->GetResource<Material>("Materials/DefaultGrey.xml"));
+    planeNode_->SetScale(Vector3(20, 20, 20));
+    planeNode_->SetPosition(Vector3(0, -1, 0));
+
 
     // Create light.
     Node* lightNode = scene_->CreateChild("Light");
     lightNode->SetDirection(Vector3(0.6f, -1.0f, 0.8f));
     Light* light = lightNode->CreateComponent<Light>();
     light->SetLightType(LIGHT_DIRECTIONAL);
+    light->SetCastShadows(true);
 
     // Create viewport.
     const auto viewport = MakeShared<Viewport>(context_, scene_, camera);
@@ -155,6 +176,9 @@ void MyApplication::Update(VariantMap& eventData)
 {
     const float timeStep = eventData[Update::P_TIMESTEP].GetFloat();
     geometryNode_->Rotate(Quaternion{10 * timeStep, Vector3::UP}, TS_WORLD);
+    //planeNode_->Rotate(Quaternion{10 * timeStep, Vector3::UP}, TS_WORLD);
+
+    // fpsComp_->Update(timeStep); 
 
     auto input = GetSubsystem<Input>();
     if (input->GetKeyPress(KEY_ESCAPE))

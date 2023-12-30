@@ -41,4 +41,5 @@ void Urho3D::FPSCameraController::DelayedStart()
 void Urho3D::FPSCameraController::RegisterObject(Context* context)
 {
     context->AddFactoryReflection<FPSCameraController>(Category_MyGamePlugin);
+    //context->AddReflection<FPSCameraController>(Category_MyGamePlugin);
 }

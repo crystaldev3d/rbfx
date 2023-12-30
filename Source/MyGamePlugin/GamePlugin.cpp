@@ -53,6 +53,12 @@ GamePlugin::GamePlugin(Context* context)
     : PluginApplication(context)
 {
     URHO3D_LOGDEBUG("GamePlugin::GamePlugin");
+
+    RegisterObject<RotateObject>();
+    RegisterObject<PixelArtGenerator>();
+    RegisterObject<AutoTransform>();
+    RegisterObject<Picker>();
+    RegisterObject<FPSCameraController>();
 }
 
 GamePlugin::~GamePlugin()
@@ -64,11 +70,7 @@ void GamePlugin::Load()
 {
     URHO3D_LOGDEBUG("GamePlugin::Load");
 
-    RegisterObject<RotateObject>();
-    RegisterObject<PixelArtGenerator>();
-    RegisterObject<AutoTransform>();
-    RegisterObject<Picker>();
-    RegisterObject<FPSCameraController>();
+
 }
 
 void GamePlugin::Unload()
