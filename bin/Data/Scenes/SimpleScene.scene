@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <resource _id="1">
 	<attributes>
-		<attribute name="Next Node ID" type="Int" value="9" />
-		<attribute name="Next Component ID" type="Int" value="17" />
+		<attribute name="Next Node ID" type="Int" value="12" />
+		<attribute name="Next Component ID" type="Int" value="25" />
 	</attributes>
 	<components>
 		<component _id="1" _typeName="Octree" />
@@ -63,21 +63,48 @@
 		<node _id="5">
 			<attributes>
 				<attribute name="Name" type="String" value="Sample Cube" />
+				<attribute name="Position" type="Vector3" value="0 -2.98023e-08 0" />
 				<attribute name="Scale" type="Vector3" value="3 3 3" />
 			</attributes>
 			<components>
-				<component _id="6" _typeName="StaticModel">
-					<attributes>
-						<attribute name="Model" type="ResourceRef" value="Model;Models/TeaPot.mdl" />
-						<attribute name="Material" type="ResourceRefList" value="Material;Materials/DefaultWhite.xml;Materials/DefaultWhite.xml" />
-						<attribute name="Cast Shadows" type="Bool" value="true" />
-					</attributes>
-				</component>
+				<component _id="24" _typeName="AutoTransform" />
 			</components>
+			<nodes>
+				<node _id="9">
+					<attributes>
+						<attribute name="Name" type="String" value="start" />
+						<attribute name="Position" type="Vector3" value="-2.000198 9.9341e-09 0" />
+						<attribute name="Scale" type="Vector3" value="0.333333 0.333333 0.333333" />
+					</attributes>
+				</node>
+				<node _id="10">
+					<attributes>
+						<attribute name="Name" type="String" value="end" />
+						<attribute name="Position" type="Vector3" value="2.190696 0 0" />
+					</attributes>
+				</node>
+				<node _id="11">
+					<attributes>
+						<attribute name="Name" type="String" value="target" />
+						<attribute name="Position" type="Vector3" value="0.640417 0.017401 -0.653642" />
+					</attributes>
+					<components>
+						<component _id="6" _typeName="StaticModel">
+							<attributes>
+								<attribute name="Model" type="ResourceRef" value="Model;Models/TeaPot.mdl" />
+								<attribute name="Material" type="ResourceRefList" value="Material;Materials/DefaultWhite.xml;Materials/DefaultWhite.xml" />
+								<attribute name="Cast Shadows" type="Bool" value="true" />
+							</attributes>
+						</component>
+						<component _id="20" _typeName="RotateObject" />
+					</components>
+				</node>
+			</nodes>
 		</node>
 		<node _id="6">
 			<attributes>
 				<attribute name="Name" type="String" value="Ground Plane" />
+				<attribute name="Position" type="Vector3" value="0 1.19209e-07 0" />
 				<attribute name="Scale" type="Vector3" value="7 7 7" />
 			</attributes>
 			<components>
@@ -111,4 +138,5 @@
 			</nodes>
 		</node>
 	</nodes>
+	<auxiliary />
 </resource>

@@ -19,7 +19,8 @@
 		"LoadedPlugins": [
 			"Sample.103_GamePlugin",
 			"Sample.113_InputLogger",
-			"Builtin.SceneViewer"
+			"Builtin.SceneViewer",
+			"MyGamePlugin"
 		]
 	}
 }

@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.14)
+#project (MyGame)
+set (MYGAME_TARGET MyGame)
+
+# C++17 is required for this project.
+set (CMAKE_CXX_STANDARD 17)
+
+# Setup output directories.
+#set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+#set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+#set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+file (GLOB SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.h")
+
+# Windows only: URHO3D_WIN32_CONSOLE controls whether to keep console or not
+if (NOT URHO3D_WIN32_CONSOLE)
+    set (PLATFORM WIN32)
+endif ()
+
+# Add executable.
+add_executable(${MYGAME_TARGET} ${PLATFORM} ${SOURCE_FILES})
+target_link_libraries (${MYGAME_TARGET} PUBLIC Urho3D)
+target_include_directories(${MYGAME_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Source)
+
+install(TARGETS ${MYGAME_TARGET}
+    RUNTIME DESTINATION ${DEST_BIN_DIR_CONFIG}
+    LIBRARY DESTINATION ${DEST_LIBRARY_DIR_CONFIG}
+    ARCHIVE DESTINATION ${DEST_ARCHIVE_DIR_CONFIG}
+    BUNDLE  DESTINATION ${DEST_BIN_DIR_CONFIG}
+)

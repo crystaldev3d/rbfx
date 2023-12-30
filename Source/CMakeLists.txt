@@ -36,6 +36,9 @@ add_subdirectory (Urho3D)
 add_subdirectory (Tools)
 add_subdirectory (Samples)
 add_subdirectory (Tests)
+add_subdirectory (MyGamePlugin)
+add_subdirectory (MyGame)
+
 
 # Check options outside so user can add Player and/or Editor explicitly afterwards.
 if (URHO3D_PLAYER)
